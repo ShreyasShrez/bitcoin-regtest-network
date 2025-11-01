@@ -16,9 +16,17 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-NODE1_RPC="http://btcuser:btcpass@localhost:18443"
-NODE2_RPC="http://btcuser:btcpass@localhost:18445"
 DOCKER_COMPOSE_FILE="docker-compose.yml"
+
+# Detect which docker compose command to use
+if command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE="docker-compose"
+elif docker compose version &> /dev/null; then
+    DOCKER_COMPOSE="docker compose"
+else
+    log_error "Neither 'docker-compose' nor 'docker compose' is available"
+    exit 1
+fi
 
 # Helper function to execute RPC commands
 # Note: Both nodes use the same credentials but different RPC ports
@@ -48,7 +56,7 @@ log_error() {
 # Cleanup function (optional, can be called manually)
 cleanup() {
     log_info "Cleaning up..."
-    docker-compose -f "$DOCKER_COMPOSE_FILE" down -v 2>/dev/null || true
+    $DOCKER_COMPOSE -f "$DOCKER_COMPOSE_FILE" down -v 2>/dev/null || true
 }
 
 # Handle script termination gracefully
@@ -68,7 +76,7 @@ if docker ps | grep -q bitcoin-node1 && docker ps | grep -q bitcoin-node2; then
 else
     # Start containers
     log_info "Starting Docker containers..."
-    docker-compose -f "$DOCKER_COMPOSE_FILE" up -d
+    $DOCKER_COMPOSE -f "$DOCKER_COMPOSE_FILE" up -d
 fi
 
 # Wait for nodes to be ready
@@ -235,12 +243,12 @@ log_info "To interact with the nodes:"
 log_info "  Node1: docker exec bitcoin-node1 bitcoin-cli -regtest -rpcuser=btcuser -rpcpassword=btcpass <command>"
 log_info "  Node2: docker exec bitcoin-node2 bitcoin-cli -regtest -rpcuser=btcuser -rpcpassword=btcpass <command>"
 log_info ""
-log_info "To stop the network, run: docker-compose -f $DOCKER_COMPOSE_FILE down"
+log_info "To stop the network, run: $DOCKER_COMPOSE -f $DOCKER_COMPOSE_FILE down"
 log_info ""
 
 log_info ""
 log_info "Script completed successfully!"
 log_info "To run again and create another transaction, simply run this script again: ./bitcoin-regtest.sh"
-log_info "To stop and clean up the network, run: docker-compose -f $DOCKER_COMPOSE_FILE down -v"
+log_info "To stop and clean up the network, run: $DOCKER_COMPOSE -f $DOCKER_COMPOSE_FILE down -v"
 log_info ""
 
