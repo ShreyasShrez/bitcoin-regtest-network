@@ -134,6 +134,8 @@ rpc_node1 createwallet "wallet1" 2>/dev/null || rpc_node1 loadwallet "wallet1" 2
 rpc_node2 createwallet "wallet2" 2>/dev/null || rpc_node2 loadwallet "wallet2" 2>/dev/null || true
 
 # Generate initial blocks on node1 to create some coins
+# Bitcoin requires 100 confirmations before coinbase transactions (block rewards) can be spent
+# Mining 101 blocks ensures the first block's reward has 100 confirmations and is spendable
 log_info "Mining initial blocks on node1 to fund the wallet..."
 INITIAL_BLOCKS=101
 rpc_node1 generatetoaddress "$INITIAL_BLOCKS" "$(rpc_node1 getnewaddress)" > /dev/null

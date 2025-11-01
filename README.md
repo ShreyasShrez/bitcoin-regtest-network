@@ -10,7 +10,7 @@ This project provides a simple way to set up and run a private Bitcoin test netw
 - Block mining capabilities
 - Transaction creation and broadcasting between nodes
 - Reusable script that can create new transactions on each run
-- **Full observability stack** (Prometheus + Grafana) with custom metrics exporter
+- **Observability stack** (Prometheus + Grafana) with custom metrics exporter
 
 ## Requirements
 
@@ -28,7 +28,7 @@ cd bitcoin-regtest-network
 
 2. Run the script:
 ```bash
-./bitcoin-regtest.sh
+./scripts/bitcoin-regtest.sh
 ```
 
 The script will:
@@ -42,19 +42,24 @@ The script will:
 
 ```
 bitcoin-regtest-network/
-├── docker-compose.yml              # Docker Compose configuration for 2 nodes
-├── docker-compose-observability.yml # Monitoring stack
-├── bitcoin-regtest.sh              # Main script to run the network
-├── start-with-monitoring.sh        # Start network + observability
-├── cleanup.sh                      # Clean up everything
+├── docker-compose.yml              # Docker Compose configuration for 2 Bitcoin nodes
+├── scripts/                        # Shell scripts
+│   ├── bitcoin-regtest.sh          # Main script to run the network
+│   ├── cleanup.sh                  # Clean up containers and volumes
+│   └── start-with-monitoring.sh    # Start network + observability stack
+├── observability/                  # Observability and monitoring stack
+│   ├── docker-compose-observability.yml  # Docker Compose for monitoring services
+│   └── monitoring/                 # Monitoring components
+│       ├── metrics-exporter.py     # Custom Prometheus exporter
+│       ├── Dockerfile              # Exporter Docker image
+│       ├── prometheus.yml          # Prometheus configuration
+│       ├── grafana-datasources.yml # Grafana data source configuration
+│       ├── grafana-dashboards/     # Grafana dashboard definitions
+│       └── bitcoin-dashboard.json  # Bitcoin metrics dashboard
 ├── README.md                       # This file
-├── OBSERVABILITY.md                # Observability guide
-├── monitoring/                     # Observability components
-│   ├── metrics-exporter.py         # Custom Prometheus exporter
-│   ├── Dockerfile                  # Exporter Docker image
-│   ├── prometheus.yml              # Prometheus config
-│   ├── grafana-datasources.yml     # Grafana data source
-│   └── bitcoin-dashboard.json      # Grafana dashboard
+├── observability/
+│   └── OBSERVABILITY.md            # Observability setup guide
+├── FEATURES.md                     # Project features documentation
 └── .github/
     └── workflows/
         └── ci-cd.yml               # GitHub Actions CI/CD pipeline
@@ -64,10 +69,10 @@ bitcoin-regtest-network/
 
 ### Running the Network
 
-The main script `bitcoin-regtest.sh` handles the complete setup:
+The main script `scripts/bitcoin-regtest.sh` handles the complete setup:
 
 ```bash
-./bitcoin-regtest.sh
+./scripts/bitcoin-regtest.sh
 ```
 
 On first run, it will:
@@ -75,7 +80,7 @@ On first run, it will:
 2. Wait for nodes to be ready
 3. Connect the nodes
 4. Create wallets
-5. Mine 101 initial blocks (to unlock block rewards)
+5. Mine 101 initial blocks to fund the wallet (Bitcoin requires 100 confirmations before coinbase transactions can be spent, so 101 blocks ensures the first block's reward is spendable)
 6. Send a transaction from node1 to node2
 7. Mine a confirmation block
 
@@ -87,10 +92,14 @@ On subsequent runs, it will:
 
 ### Stopping the Network
 
-To stop and remove all containers and volumes:
+To stop and remove all containers and volumes, you can use either method:
 
 ```bash
-docker-compose down -v
+# Option 1: Use the cleanup script
+./scripts/cleanup.sh
+
+# Option 2: Use docker compose directly
+docker compose -f docker-compose.yml down -v
 ```
 
 This will completely clean up the network and all blockchain data.
@@ -185,9 +194,9 @@ docker exec bitcoin-node2 bitcoin-cli -regtest -rpcport=18445 -rpcuser=btcuser -
 Run the script multiple times to create multiple transactions:
 
 ```bash
-./bitcoin-regtest.sh  # Creates transaction #1
-./bitcoin-regtest.sh  # Creates transaction #2
-./bitcoin-regtest.sh  # Creates transaction #3
+./scripts/bitcoin-regtest.sh  # Creates transaction #1
+./scripts/bitcoin-regtest.sh  # Creates transaction #2
+./scripts/bitcoin-regtest.sh  # Creates transaction #3
 ```
 
 Each run will create a new transaction with a random amount between 0.1 and 5.0 BTC.
@@ -222,17 +231,9 @@ Nodes connect using Docker's internal networking. The script discovers each node
 
 2. **Fixed RPC Credentials**: Used hardcoded credentials (btcuser/btcpass) for simplicity. In production, these should be environment variables or secrets. Tradeoff: less secure but simpler for local development.
 
-3. **Volume Persistence**: Docker volumes are used to persist blockchain data. Tradeoff: data persists between runs (can be cleaned with `-v` flag), which is useful for testing but requires manual cleanup.
+3. **Random Transaction Amounts**: Each script run creates a transaction with a random amount. Tradeoff: more realistic testing but less predictable for specific test scenarios.
 
-4. **Health Checks**: Implemented Docker health checks to ensure nodes are ready before proceeding. Tradeoff: adds some complexity but improves reliability.
-
-5. **Script Reusability**: Script checks for running containers and reuses them. Tradeoff: allows multiple transaction runs but requires manual cleanup if you want a fresh start.
-
-6. **Random Transaction Amounts**: Each script run creates a transaction with a random amount. Tradeoff: more realistic testing but less predictable for specific test scenarios.
-
-7. **Block Generation Strategy**: Mines 101 blocks initially to unlock block rewards (Bitcoin requires 100 confirmations before spending block rewards). Tradeoff: takes slightly longer on first run but ensures proper funding.
-
-8. **Awk vs bc for Floating Point**: Used `awk` for floating point comparisons instead of `bc` for better portability across systems. Tradeoff: slightly less intuitive syntax but more widely available.
+4. **Block Generation Strategy**: Mines 101 blocks initially to unlock block rewards. Bitcoin requires 100 confirmations before coinbase transactions (block rewards) can be spent. Mining 101 blocks ensures the first block's reward has 100 confirmations and is immediately spendable. Tradeoff: takes slightly longer on first run but ensures proper funding and allows transactions right away.
 
 ## Troubleshooting
 
@@ -268,7 +269,7 @@ docker-compose logs bitcoin-node2
 Want to monitor your Bitcoin network in real-time? Check out the **full observability stack**:
 
 ```bash
-./start-with-monitoring.sh
+./scripts/start-with-monitoring.sh
 ```
 
 This starts Prometheus, Grafana, and a custom metrics exporter that exposes:
@@ -277,7 +278,7 @@ This starts Prometheus, Grafana, and a custom metrics exporter that exposes:
 - Wallet balances
 - And more...
 
-See [OBSERVABILITY.md](OBSERVABILITY.md) for details.
+See [observability/OBSERVABILITY.md](observability/OBSERVABILITY.md) for details.
 
 **Access:**
 - Grafana: http://localhost:3000 (admin/admin)
@@ -285,17 +286,53 @@ See [OBSERVABILITY.md](OBSERVABILITY.md) for details.
 
 ## CI/CD
 
-This project includes GitHub Actions workflows for:
-- **CI**: Validates bash scripts and Dockerfiles on every push/PR
-- **CD**: Runs the full Bitcoin regtest network setup and transaction test
+This project includes GitHub Actions workflows for automated testing and validation:
 
-See `.github/workflows/ci-cd.yml` for details.
+### Continuous Integration (CI)
+- Validates bash scripts and Docker configurations on every push/PR
+- Runs ShellCheck linting
+- Tests Docker Compose file syntax
 
-## License
+### Continuous Testing (CT)
+The pipeline runs three parallel test suites on each commit:
 
-This project is provided as-is for educational and testing purposes.
+1. **Basic Network Test**: Validates Bitcoin node startup, connectivity, and basic transaction creation
+2. **Full Network Test**: Tests transaction reusability by creating multiple transactions sequentially
+3. **Observability Test**: Verifies the Prometheus + Grafana monitoring stack is working correctly
 
-## Contributing
+**Note**: The GitHub Actions environment is ephemeral - runners are destroyed after each workflow completes. The CI pipeline validates that everything works correctly but doesn't maintain a persistent deployment. For production deployments, you would need to deploy to a permanent environment (cloud VM, Kubernetes cluster, etc.).
 
-Feel free to submit issues and pull requests!
+See `.github/workflows/ci-cd.yml` for the complete pipeline configuration.
 
+## Future Enhancements
+
+### Observability and Logging
+
+While not required for the core functionality, this project includes a comprehensive observability stack demonstrating production-ready monitoring capabilities. Future enhancements could include:
+
+#### Log Aggregation
+- **Application Logs**: Transaction details, wallet balances, and node events can be forwarded to centralized logging solutions:
+  - **ELK Stack** (Elasticsearch, Logstash, Kibana) for log aggregation and analysis
+  - **Kibana** for advanced log visualization and dashboards
+  - Structured logging with JSON format for better parsing and filtering
+
+#### Advanced Observability
+- **Distributed Tracing**: Integrate with **Jaeger** for transaction flow tracing across nodes
+- **Alternative Monitoring Stacks**:
+  - **Datadog** for comprehensive APM (Application Performance Monitoring)
+  - Enhanced **Prometheus + Grafana** setup with custom alerts and SLAs
+  - **OpenTelemetry** for vendor-neutral observability
+
+#### Current Implementation
+
+The project already includes a working Prometheus + Grafana observability stack with custom metrics:
+
+![Bitcoin Regtest Network Dashboard](observability/grafana-dashboard.png)
+
+*The dashboard above (not a requirement, but implemented to demonstrate going above and beyond) shows real-time monitoring of:*
+- Block height and blockchain growth
+- Blockchain size metrics
+- Peer connection status
+- Wallet balance tracking
+
+See [observability/OBSERVABILITY.md](observability/OBSERVABILITY.md) for setup instructions.
