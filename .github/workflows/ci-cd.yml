@@ -139,8 +139,8 @@ jobs:
     - name: Cleanup
       if: always()
       run: |
-        echo "Cleaning up containers..."
-        docker compose -f docker-compose.yml down -v || true
+        chmod +x cleanup.sh
+        ./cleanup.sh || true
         docker system prune -f || true
 
   full-test:
@@ -193,7 +193,7 @@ jobs:
     - name: Cleanup
       if: always()
       run: |
-        echo "Cleaning up..."
-        docker compose -f docker-compose.yml down -v || true
+        chmod +x cleanup.sh
+        ./cleanup.sh || true
         docker system prune -f || true
 

@@ -10,11 +10,21 @@ cd "$SCRIPT_DIR"
 
 DOCKER_COMPOSE_FILE="docker-compose.yml"
 
+# Detect which docker compose command to use
+if command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE="docker-compose"
+elif docker compose version &> /dev/null; then
+    DOCKER_COMPOSE="docker compose"
+else
+    echo "❌ Neither 'docker-compose' nor 'docker compose' is available"
+    exit 1
+fi
+
 echo "Stopping and removing Bitcoin regtest network..."
-docker-compose -f "$DOCKER_COMPOSE_FILE" down -v
+$DOCKER_COMPOSE -f "$DOCKER_COMPOSE_FILE" down -v
 
 echo "Cleaning up Docker volumes..."
 docker volume ls | grep -E "(node1-data|node2-data)" | awk '{print $2}' | xargs -r docker volume rm || true
 
-echo "✓ Cleanup completed!"
+echo "✅ Cleanup completed!"
 
