@@ -5,10 +5,9 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DOCKER_COMPOSE_FILE="$SCRIPT_DIR/docker-compose.yml"
 cd "$SCRIPT_DIR"
-
-DOCKER_COMPOSE_FILE="docker-compose.yml"
 
 # Detect which docker compose command to use
 if command -v docker-compose &> /dev/null; then
@@ -27,4 +26,3 @@ echo "Cleaning up Docker volumes..."
 docker volume ls | grep -E "(node1-data|node2-data)" | awk '{print $2}' | xargs -r docker volume rm || true
 
 echo "✅ Cleanup completed!"
-

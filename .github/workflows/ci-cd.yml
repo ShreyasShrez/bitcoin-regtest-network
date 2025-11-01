@@ -29,7 +29,7 @@ jobs:
     
     - name: Check script syntax
       run: |
-        bash -n bitcoin-regtest.sh
+        bash -n scripts/bitcoin-regtest.sh
         echo "✅ Bash script syntax is valid"
     
     - name: Validate Dockerfile (if exists)
@@ -53,12 +53,12 @@ jobs:
       uses: docker/setup-buildx-action@v3
     
     - name: Make script executable
-      run: chmod +x bitcoin-regtest.sh
+      run: chmod +x scripts/bitcoin-regtest.sh
     
     - name: Run Bitcoin Regtest Network
       run: |
         echo "Starting Bitcoin regtest network test..."
-        timeout 300 ./bitcoin-regtest.sh || true
+        timeout 300 ./scripts/bitcoin-regtest.sh || true
         echo "✅ Network setup completed"
     
     - name: Verify nodes are running
@@ -139,8 +139,8 @@ jobs:
     - name: Cleanup
       if: always()
       run: |
-        chmod +x cleanup.sh
-        ./cleanup.sh || true
+        chmod +x scripts/cleanup.sh
+        ./scripts/cleanup.sh || true
         docker system prune -f || true
 
   full-test:
@@ -156,7 +156,7 @@ jobs:
       uses: docker/setup-buildx-action@v3
     
     - name: Make script executable
-      run: chmod +x bitcoin-regtest.sh
+      run: chmod +x scripts/bitcoin-regtest.sh
     
     - name: Run full test sequence
       run: |
@@ -164,7 +164,7 @@ jobs:
         
         # First run - initial setup
         echo "=== First Run: Initial Setup ==="
-        timeout 180 ./bitcoin-regtest.sh || true
+        timeout 180 ./scripts/bitcoin-regtest.sh || true
         sleep 10
         
         # Verify first transaction
@@ -174,7 +174,7 @@ jobs:
         
         # Second run - create another transaction
         echo "=== Second Run: Create Another Transaction ==="
-        timeout 120 ./bitcoin-regtest.sh || true
+        timeout 120 ./scripts/bitcoin-regtest.sh || true
         sleep 10
         
         # Verify second transaction
@@ -193,7 +193,7 @@ jobs:
     - name: Cleanup
       if: always()
       run: |
-        chmod +x cleanup.sh
-        ./cleanup.sh || true
+        chmod +x scripts/cleanup.sh
+        ./scripts/cleanup.sh || true
         docker system prune -f || true
 

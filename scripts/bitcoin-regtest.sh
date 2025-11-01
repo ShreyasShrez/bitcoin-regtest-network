@@ -6,9 +6,6 @@ set -euo pipefail
 # This script sets up a private Bitcoin network with 2 nodes, connects them,
 # mines blocks, and sends transactions between them.
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
-
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -16,7 +13,9 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-DOCKER_COMPOSE_FILE="docker-compose.yml"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DOCKER_COMPOSE_FILE="$SCRIPT_DIR/docker-compose.yml"
+cd "$SCRIPT_DIR"
 
 # Detect which docker compose command to use
 if command -v docker-compose &> /dev/null; then
@@ -252,4 +251,3 @@ log_info "Script completed successfully!"
 log_info "To run again and create another transaction, simply run this script again: ./bitcoin-regtest.sh"
 log_info "To stop and clean up the network, run: $DOCKER_COMPOSE -f $DOCKER_COMPOSE_FILE down -v"
 log_info ""
-
