@@ -24,7 +24,7 @@ jobs:
     
     - name: Validate Docker Compose file
       run: |
-        docker-compose -f docker-compose.yml config > /dev/null
+        docker compose -f docker-compose.yml config > /dev/null
         echo "✓ Docker Compose file is valid"
     
     - name: Check script syntax
@@ -128,7 +128,7 @@ jobs:
       if: always()
       run: |
         echo "Cleaning up containers..."
-        docker-compose -f docker-compose.yml down -v || true
+        docker compose -f docker-compose.yml down -v || true
         docker system prune -f || true
 
   full-test:
@@ -182,6 +182,6 @@ jobs:
       if: always()
       run: |
         echo "Cleaning up..."
-        docker-compose -f docker-compose.yml down -v || true
+        docker compose -f docker-compose.yml down -v || true
         docker system prune -f || true
 
