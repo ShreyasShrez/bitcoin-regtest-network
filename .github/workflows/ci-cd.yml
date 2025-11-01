@@ -25,12 +25,12 @@ jobs:
     - name: Validate Docker Compose file
       run: |
         docker compose -f docker-compose.yml config > /dev/null
-        echo "✓ Docker Compose file is valid"
+        echo "✅ Docker Compose file is valid"
     
     - name: Check script syntax
       run: |
         bash -n bitcoin-regtest.sh
-        echo "✓ Bash script syntax is valid"
+        echo "✅ Bash script syntax is valid"
     
     - name: Validate Dockerfile (if exists)
       run: |
@@ -59,15 +59,15 @@ jobs:
       run: |
         echo "Starting Bitcoin regtest network test..."
         timeout 300 ./bitcoin-regtest.sh || true
-        echo "✓ Network setup completed"
+        echo "✅ Network setup completed"
     
     - name: Verify nodes are running
       run: |
         sleep 10
         if docker ps | grep -q bitcoin-node1 && docker ps | grep -q bitcoin-node2; then
-          echo "✓ Both nodes are running"
+          echo "✅ Both nodes are running"
         else
-          echo "✗ Nodes are not running"
+          echo "❌ Nodes are not running"
           exit 1
         fi
     
@@ -79,23 +79,33 @@ jobs:
         echo "Node1 peers: $NODE1_PEERS"
         echo "Node2 peers: $NODE2_PEERS"
         if [ "$NODE1_PEERS" -gt "0" ] || [ "$NODE2_PEERS" -gt "0" ]; then
-          echo "✓ Nodes are connected"
+          echo "✅ Nodes are connected"
         else
-          echo "⚠ Nodes may not be connected (this is sometimes expected in CI)"
+          echo "⚠️  Nodes may not be connected (this is sometimes expected in CI)"
         fi
     
     - name: Test transaction creation
       run: |
         echo "Testing transaction creation..."
         
-        # Wait a bit for nodes to be fully ready
-        sleep 5
+        # Wait for both nodes to be fully ready
+        echo "Waiting for nodes to be ready..."
+        for i in {1..30}; do
+          NODE1_READY=$(docker exec bitcoin-node1 bitcoin-cli -regtest -rpcuser=btcuser -rpcpassword=btcpass getblockchaininfo > /dev/null 2>&1 && echo "1" || echo "0")
+          NODE2_READY=$(docker exec bitcoin-node2 bitcoin-cli -regtest -rpcport=18445 -rpcuser=btcuser -rpcpassword=btcpass getblockchaininfo > /dev/null 2>&1 && echo "1" || echo "0")
+          if [ "$NODE1_READY" == "1" ] && [ "$NODE2_READY" == "1" ]; then
+            echo "Both nodes are ready!"
+            break
+          fi
+          echo "Attempt $i/30 (node1: $NODE1_READY, node2: $NODE2_READY)..."
+          sleep 2
+        done
         
         # Check if we can create a transaction
-        NODE2_ADDR=$(docker exec bitcoin-node2 bitcoin-cli -regtest -rpcuser=btcuser -rpcpassword=btcpass getnewaddress 2>/dev/null || echo "")
+        NODE2_ADDR=$(docker exec bitcoin-node2 bitcoin-cli -regtest -rpcport=18445 -rpcuser=btcuser -rpcpassword=btcpass getnewaddress 2>/dev/null || echo "")
         
         if [ -z "$NODE2_ADDR" ]; then
-          echo "⚠ Could not get address from node2"
+          echo "⚠️  Could not get address from node2"
           exit 0
         fi
         
@@ -105,23 +115,25 @@ jobs:
         TXID=$(docker exec bitcoin-node1 bitcoin-cli -regtest -rpcuser=btcuser -rpcpassword=btcpass sendtoaddress "$NODE2_ADDR" 0.1 2>/dev/null || echo "")
         
         if [ -n "$TXID" ]; then
-          echo "✓ Transaction created successfully: $TXID"
+          echo "✅ Transaction created successfully: $TXID"
         else
-          echo "⚠ Could not create transaction (may need more blocks mined)"
+          echo "⚠️  Could not create transaction (may need more blocks mined)"
         fi
     
     - name: Check blockchain status
       run: |
         echo "Checking blockchain status..."
         NODE1_BLOCKS=$(docker exec bitcoin-node1 bitcoin-cli -regtest -rpcuser=btcuser -rpcpassword=btcpass getblockcount 2>/dev/null || echo "0")
-        NODE2_BLOCKS=$(docker exec bitcoin-node2 bitcoin-cli -regtest -rpcuser=btcuser -rpcpassword=btcpass getblockcount 2>/dev/null || echo "0")
+        NODE2_BLOCKS=$(docker exec bitcoin-node2 bitcoin-cli -regtest -rpcport=18445 -rpcuser=btcuser -rpcpassword=btcpass getblockcount 2>/dev/null || echo "0")
         echo "Node1 block count: $NODE1_BLOCKS"
         echo "Node2 block count: $NODE2_BLOCKS"
         
-        if [ "$NODE1_BLOCKS" -gt "0" ]; then
-          echo "✓ Blockchain is initialized"
+        if [ "$NODE1_BLOCKS" -gt "0" ] && [ "$NODE2_BLOCKS" -gt "0" ]; then
+          echo "✅ Both nodes have blockchain initialized"
+        elif [ "$NODE1_BLOCKS" -gt "0" ] || [ "$NODE2_BLOCKS" -gt "0" ]; then
+          echo "⚠️  Only partial blockchain found"
         else
-          echo "⚠ No blocks found"
+          echo "⚠️  No blocks found"
         fi
     
     - name: Cleanup
@@ -171,12 +183,12 @@ jobs:
         echo "Transaction count after second run: $TX_COUNT_AFTER"
         
         if [ "$TX_COUNT_AFTER" -gt "$TX_COUNT" ]; then
-          echo "✓ Second transaction created successfully"
+          echo "✅ Second transaction created successfully"
         else
-          echo "⚠ Transaction count did not increase (may be expected)"
+          echo "⚠️  Transaction count did not increase (may be expected)"
         fi
         
-        echo "✓ Full test sequence completed"
+        echo "✅ Full test sequence completed"
     
     - name: Cleanup
       if: always()
