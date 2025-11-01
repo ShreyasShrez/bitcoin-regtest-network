@@ -19,7 +19,7 @@ jobs:
     - name: ShellCheck - Lint bash scripts
       uses: ludeeus/action-shellcheck@master
       with:
-        shellcheck_version: latest
+        version: latest
       continue-on-error: true  # ShellCheck warnings won't fail the build
     
     - name: Validate Docker Compose file
