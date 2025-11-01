@@ -1,0 +1,56 @@
+{
+  "dashboard": {
+    "title": "Bitcoin Regtest Network",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Block Height",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "bitcoin_block_height",
+            "legendFormat": "Block Height"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Block Chain Size",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "bitcoin_block_chain_size_bytes",
+            "legendFormat": "Chain Size (bytes)"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Peer Connections",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "bitcoin_peer_connections",
+            "legendFormat": "Peers"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 6, "x": 0, "y": 8}
+      },
+      {
+        "id": 4,
+        "title": "Block Validation Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "bitcoin_block_time_ms",
+            "legendFormat": "Validation Time (ms)"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 18, "x": 6, "y": 8}
+      }
+    ]
+  }
+}
+

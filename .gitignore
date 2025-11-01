@@ -22,10 +22,3 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
-
-# Local observability files (not pushed to GitHub)
-FEATURES.md
-OBSERVABILITY.md
-docker-compose-observability.yml
-monitoring/
-start-with-monitoring.sh
