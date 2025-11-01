@@ -195,7 +195,8 @@ else
 fi
 
 # Generate a random amount between 0.1 and 5.0 BTC for each transaction
-RANDOM_AMOUNT=$(awk "BEGIN {printf \"%.6f\", 0.1 + rand() * 4.9}")
+# Seed with current time for better randomness
+RANDOM_AMOUNT=$(awk "BEGIN {srand(); printf \"%.6f\", 0.1 + rand() * 4.9}")
 SEND_AMOUNT=$RANDOM_AMOUNT
 
 log_info "Sending $SEND_AMOUNT BTC from $FROM_NODE..."
