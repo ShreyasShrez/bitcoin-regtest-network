@@ -5,5 +5,5 @@ COPY metrics-exporter.py .
 
 RUN chmod +x metrics-exporter.py
 
-CMD ["python3", "metrics-exporter.py"]
+ENTRYPOINT ["python3", "metrics-exporter.py"]
 
