@@ -1,0 +1,70 @@
+services:
+  bitcoin-node1:
+    image: bitcoin/bitcoin:latest
+    container_name: bitcoin-node1
+    command:
+      - bitcoind
+      - -regtest
+      - -server
+      - -rpcallowip=0.0.0.0/0
+      - -rpcbind=0.0.0.0
+      - -rpcuser=btcuser
+      - -rpcpassword=btcpass
+      - -rpcport=18443
+      - -port=18444
+      - -fallbackfee=0.00001
+      - -txindex
+      - -daemon=0
+    ports:
+      - "18443:18443"
+      - "18444:18444"
+    volumes:
+      - node1-data:/home/bitcoin/.bitcoin
+    networks:
+      - bitcoin-network
+    healthcheck:
+      test: ["CMD", "bitcoin-cli", "-regtest", "-rpcuser=btcuser", "-rpcpassword=btcpass", "getblockchaininfo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  bitcoin-node2:
+    image: bitcoin/bitcoin:latest
+    container_name: bitcoin-node2
+    command:
+      - bitcoind
+      - -regtest
+      - -server
+      - -rpcallowip=0.0.0.0/0
+      - -rpcbind=0.0.0.0
+      - -rpcuser=btcuser
+      - -rpcpassword=btcpass
+      - -rpcport=18445
+      - -port=18446
+      - -fallbackfee=0.00001
+      - -txindex
+      - -daemon=0
+    ports:
+      - "18445:18445"
+      - "18446:18446"
+    volumes:
+      - node2-data:/home/bitcoin/.bitcoin
+    networks:
+      - bitcoin-network
+    depends_on:
+      bitcoin-node1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bitcoin-cli", "-regtest", "-rpcport=18445", "-rpcuser=btcuser", "-rpcpassword=btcpass", "getblockchaininfo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  node1-data:
+  node2-data:
+
+networks:
+  bitcoin-network:
+    driver: bridge
+
